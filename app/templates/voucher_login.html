@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Conectando...</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+    .box{background:#111827;padding:20px;border-radius:12px;max-width:420px;text-align:center}
+    button{border:none;border-radius:8px;padding:10px 14px;background:#22c55e;color:#052e16;font-weight:700;cursor:pointer}
+    .small{font-size:12px;color:#9ca3af}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Login Wi-Fi do Cliente</h2>
+    <p>Conectando automaticamente no hotspot...</p>
+    <form id="hs-login" action="{{ hotspot_login_url }}" method="post">
+      <input type="hidden" name="username" value="{{ username }}" />
+      <input type="hidden" name="password" value="{{ password }}" />
+      <input type="hidden" name="dst" value="{{ dst }}" />
+      <button type="submit">Entrar agora</button>
+    </form>
+    <p class="small">Se não conectar sozinho em 3 segundos, toque no botão.</p>
+  </div>
+
+  <script>
+    async function connectNow() {
+      try {
+        await fetch('/v/{{ token }}/mark-used', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'}
+        });
+      } catch (_) {}
+      document.getElementById('hs-login').submit();
+    }
+
+    setTimeout(connectNow, 3000);
+
+    document.getElementById('hs-login').addEventListener('submit', function() {
+      fetch('/v/{{ token }}/mark-used', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+      });
+    });
+  </script>
+</body>
+</html>

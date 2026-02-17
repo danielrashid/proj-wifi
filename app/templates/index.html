@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GWIFI Admin</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#f3f4f6;margin:0;padding:20px}
+    .container{max-width:1100px;margin:0 auto}
+    .card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.1);margin-bottom:16px}
+    .btn{background:#111827;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+    .voucher{border:1px solid #e5e7eb;border-radius:8px;padding:10px}
+    img{max-width:160px;height:auto}
+    .muted{color:#6b7280;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h2>GWIFI - Painel de Vouchers</h2>
+      <p>Cria usuário no MikroTik com sessão de 1 hora e QR Code de login.</p>
+      <form action="/admin/create?token={{ request.args.get('token', '') }}" method="post">
+        <button class="btn" type="submit">Gerar novo voucher</button>
+      </form>
+    </div>
+
+    <div class="grid">
+      {% for v in vouchers %}
+      <div class="voucher">
+        <div><strong>ID:</strong> {{ v.id }}</div>
+        <div><strong>User:</strong> {{ v.username }}</div>
+        <div><strong>Pass:</strong> {{ v.password }}</div>
+        <div><strong>Status:</strong> {% if v.used == 1 %}Usado{% else %}Disponível{% endif %}</div>
+        <div class="muted">Criado: {{ v.created_at }}</div>
+        <div class="muted">MikroTik: {% if v.mikrotik_created == 1 %}OK{% else %}Pendente{% endif %}</div>
+        <p><a href="{{ v.qr_url }}" target="_blank">Abrir link do voucher</a></p>
+        <img src="{{ v.qr_data_uri }}" alt="QR voucher" />
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</body>
+</html>

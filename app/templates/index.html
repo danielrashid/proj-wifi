@@ -3,41 +3,132 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>GWIFI Admin</title>
+  <title>Speed Coffee • GWIFI Admin</title>
   <style>
-    body{font-family:Arial,sans-serif;background:#f3f4f6;margin:0;padding:20px}
-    .container{max-width:1100px;margin:0 auto}
-    .card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.1);margin-bottom:16px}
-    .btn{background:#111827;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-    .voucher{border:1px solid #e5e7eb;border-radius:8px;padding:10px}
-    img{max-width:160px;height:auto}
-    .muted{color:#6b7280;font-size:12px}
+    :root{
+      --bg:#0b1020;
+      --panel:#121a2f;
+      --panel-soft:#18213a;
+      --text:#e8eeff;
+      --muted:#a9b6dc;
+      --accent:#7dd3fc;
+      --accent-2:#22c55e;
+      --line:#2b3556;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Inter,Segoe UI,Arial,sans-serif;background:radial-gradient(circle at top right,#1f2a4d 0,#0b1020 42%,#070b17 100%);margin:0;padding:20px;color:var(--text)}
+    .container{max-width:1080px;margin:0 auto}
+    .card{background:linear-gradient(180deg,var(--panel),var(--panel-soft));border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .brand{display:flex;flex-direction:column;gap:6px}
+    .badge{display:inline-block;background:rgba(125,211,252,.14);color:var(--accent);padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+    h1,h2,h3{margin:0}
+    h2{font-size:20px}
+    .coffee{font-size:26px;font-weight:800;letter-spacing:.01em}
+    .coffee span{color:var(--accent)}
+    .btn{background:linear-gradient(90deg,#2563eb,#0ea5e9);color:#fff;border:none;padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:700}
+    .highlight{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;align-items:stretch}
+    .meta p{margin:8px 0;color:var(--text)}
+    .meta strong{color:#fff}
+    .qr-box{text-align:center;background:rgba(10,15,30,.35);border:1px dashed var(--line);border-radius:12px;padding:12px}
+    .qr-box img{max-width:260px;width:100%;height:auto;border-radius:10px;padding:8px;background:#fff}
+    .muted{color:var(--muted);font-size:12px}
+    .admin-grid{display:grid;grid-template-columns:1fr 180px;gap:14px;align-items:center}
+    .admin-grid img{max-width:160px;width:100%;background:#fff;border-radius:10px;padding:6px}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left}
+    th{font-weight:600;color:#d6e2ff}
+    a{color:var(--accent)}
+    @media (max-width: 700px){
+      .highlight,.admin-grid{grid-template-columns:1fr}
+      .coffee{font-size:22px}
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="card">
-      <h2>GWIFI - Painel de Vouchers</h2>
-      <p>Cria usuário no MikroTik com sessão de 1 hora e QR Code de login.</p>
-      <form action="/admin/create?token={{ request.args.get('token', '') }}" method="post">
-        <button class="btn" type="submit">Gerar novo voucher</button>
-      </form>
+      <div class="top">
+        <div class="brand">
+          <span class="badge">Wi-Fi Voucher</span>
+          <div class="coffee">Speed <span>Coffee</span></div>
+          <p class="muted">Painel de emissão • 1 QR por atendimento • pronto para uso no balcão</p>
+        </div>
+        <form action="/admin/create?token={{ request.args.get('token', '') }}" method="post">
+          <button class="btn" type="submit">Gerar novo voucher</button>
+        </form>
+      </div>
     </div>
 
-    <div class="grid">
-      {% for v in vouchers %}
-      <div class="voucher">
-        <div><strong>ID:</strong> {{ v.id }}</div>
-        <div><strong>User:</strong> {{ v.username }}</div>
-        <div><strong>Pass:</strong> {{ v.password }}</div>
-        <div><strong>Status:</strong> {% if v.used == 1 %}Usado{% else %}Disponível{% endif %}</div>
-        <div class="muted">Criado: {{ v.created_at }}</div>
-        <div class="muted">MikroTik: {% if v.mikrotik_created == 1 %}OK{% else %}Pendente{% endif %}</div>
-        <p><a href="{{ v.qr_url }}" target="_blank">Abrir link do voucher</a></p>
-        <img src="{{ v.qr_data_uri }}" alt="QR voucher" />
+    {% if latest_voucher %}
+    <div class="card">
+      <h3>Voucher atual</h3>
+      <div class="highlight">
+        <div class="meta">
+          <p><strong>ID:</strong> {{ latest_voucher.id }}</p>
+          <p><strong>Código:</strong> {{ latest_voucher.token }}</p>
+          <p><strong>Status:</strong> {% if latest_voucher.used == 1 %}Usado{% else %}Disponível{% endif %}</p>
+          <p><strong>MikroTik:</strong> {% if latest_voucher.mikrotik_created == 1 %}OK{% else %}Pendente{% endif %}</p>
+          <p class="muted">Criado: {{ latest_voucher.created_at }}</p>
+          <p><a href="{{ latest_voucher.qr_url }}" target="_blank">Abrir link do voucher</a></p>
+          <p class="muted">As credenciais técnicas ficam ocultas nesta tela para operação no balcão.</p>
+        </div>
+        <div class="qr-box">
+          <p><strong>QR do cliente</strong></p>
+          <img src="{{ latest_voucher.qr_data_uri }}" alt="QR voucher" />
+        </div>
       </div>
-      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+      <p>Nenhum voucher criado ainda.</p>
+      <form action="/admin/create?token={{ request.args.get('token', '') }}" method="post">
+        <button class="btn" type="submit">Gerar primeiro voucher</button>
+      </form>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <h3>Acesso do celular do café</h3>
+      <div class="admin-grid">
+        <div>
+          <p>Abra este link no celular do atendimento para gerar vouchers direto do balcão:</p>
+          <p><a href="{{ admin_panel_url }}" target="_blank">{{ admin_panel_url }}</a></p>
+          <p class="muted">Dica: salve como favorito na tela inicial do celular.</p>
+        </div>
+        <div>
+          <img src="{{ admin_panel_qr_data_uri }}" alt="QR do painel admin" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Histórico recente</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Código</th>
+            <th>Status</th>
+            <th>Criado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in history_vouchers %}
+          <tr>
+            <td>{{ v.id }}</td>
+            <td>{{ v.token }}</td>
+            <td>{% if v.used == 1 %}Usado{% else %}Disponível{% endif %}</td>
+            <td>{{ v.created_at }}</td>
+          </tr>
+          {% endfor %}
+          {% if not history_vouchers %}
+          <tr>
+            <td colspan="4" class="muted">Sem itens no histórico.</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
   </div>
 </body>

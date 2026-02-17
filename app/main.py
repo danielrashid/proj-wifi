@@ -166,13 +166,26 @@ def index():
         """
     ).fetchall()
 
-    vouchers = []
-    for row in rows:
-        voucher = dict(row)
-        voucher["qr_data_uri"] = generate_qr_data_uri(voucher["qr_url"])
-        vouchers.append(voucher)
+    latest_voucher = None
+    history_vouchers = []
 
-    return render_template("index.html", vouchers=vouchers)
+    for index_pos, row in enumerate(rows):
+        voucher = dict(row)
+        if index_pos == 0:
+            voucher["qr_data_uri"] = generate_qr_data_uri(voucher["qr_url"])
+            latest_voucher = voucher
+        else:
+            history_vouchers.append(voucher)
+
+    admin_panel_url = f"{Settings.BASE_URL}/?token={Settings.ADMIN_TOKEN}"
+
+    return render_template(
+        "index.html",
+        latest_voucher=latest_voucher,
+        history_vouchers=history_vouchers,
+        admin_panel_url=admin_panel_url,
+        admin_panel_qr_data_uri=generate_qr_data_uri(admin_panel_url),
+    )
 
 
 @app.route("/api/v1/vouchers", methods=["POST"])

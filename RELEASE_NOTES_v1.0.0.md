@@ -1,3 +1,23 @@
+# GWIFI v1.0.1
+
+Atualização de usabilidade do painel e ajustes de operação em rede local/captive portal.
+
+## Melhorias
+
+- Painel admin com visual renovado e identidade destacada para operação no balcão
+- Exibição de apenas 1 QR principal (voucher mais recente), reduzindo confusão na entrega ao cliente
+- Histórico recente simplificado, sem múltiplos QRs simultâneos
+- Ocultação de credenciais técnicas (login/senha) na interface de atendimento
+- Bloco de acesso mobile do painel com link direto e QR do admin
+
+## Ajustes operacionais
+
+- `BASE_URL` padronizado para uso por IP local no exemplo de ambiente
+- `HOTSPOT_LOGIN_URL` ajustado para endpoint local do hotspot (`http://10.5.50.1/login`)
+- Melhor aderência ao fluxo offline/local em redes com captive portal MikroTik
+
+---
+
 # GWIFI v1.0.0
 
 Primeira versão funcional do pacote de Wi-Fi com vouchers QR para MikroTik.

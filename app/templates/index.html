@@ -70,7 +70,7 @@
           <p><strong>Status:</strong> {% if latest_voucher.used == 1 %}Usado{% else %}Disponível{% endif %}</p>
           <p><strong>MikroTik:</strong> {% if latest_voucher.mikrotik_created == 1 %}OK{% else %}Pendente{% endif %}</p>
           <p class="muted">Criado: {{ latest_voucher.created_at }}</p>
-          <p><a href="{{ latest_voucher.qr_url }}" target="_blank">Abrir link do voucher</a></p>
+          <p><a href="{{ latest_voucher.access_url }}" target="_blank">Abrir link do voucher</a></p>
           <p class="muted">As credenciais técnicas ficam ocultas nesta tela para operação no balcão.</p>
         </div>
         <div class="qr-box">

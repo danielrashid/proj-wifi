@@ -7,6 +7,7 @@ import string
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 
 import qrcode
 from dotenv import load_dotenv
@@ -22,7 +23,8 @@ app = Flask(__name__, template_folder="templates", static_folder="static")
 class Settings:
     APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
     APP_PORT = int(os.getenv("APP_PORT", "8080"))
-    BASE_URL = os.getenv("BASE_URL", "http://localhost:8080").rstrip("/")
+    BASE_URL = os.getenv("BASE_URL", "").strip()
+    PREFER_REQUEST_BASE_URL = os.getenv("PREFER_REQUEST_BASE_URL", "true").lower() == "true"
 
     ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "troque_este_token")
 
@@ -105,14 +107,35 @@ def generate_qr_data_uri(data: str) -> str:
     return f"data:image/png;base64,{encoded}"
 
 
+def ensure_http_scheme(url: str) -> str:
+    raw = (url or "").strip()
+    if not raw:
+        return ""
+    if urlparse(raw).scheme:
+        return raw.rstrip("/")
+    return f"http://{raw}".rstrip("/")
+
+
+def get_base_url() -> str:
+    configured = ensure_http_scheme(Settings.BASE_URL)
+    request_base = request.host_url.rstrip("/") if request.host_url else ""
+
+    if Settings.PREFER_REQUEST_BASE_URL and request_base:
+        return request_base
+    if configured:
+        return configured
+    return request_base or "http://localhost:8080"
+
+
 def create_voucher_record() -> sqlite3.Row:
     db = get_db()
+    base_url = get_base_url()
 
     for _ in range(10):
         token = secrets.token_urlsafe(16)
         username = f"u{random_credential(7)}"
         password = random_credential(8)
-        qr_url = f"{Settings.BASE_URL}/v/{token}"
+        qr_url = f"{base_url}/v/{token}"
         created_at = datetime.now(timezone.utc).isoformat()
 
         try:
@@ -166,18 +189,20 @@ def index():
         """
     ).fetchall()
 
+    base_url = get_base_url()
     latest_voucher = None
     history_vouchers = []
 
     for index_pos, row in enumerate(rows):
         voucher = dict(row)
+        voucher["access_url"] = f"{base_url}/v/{voucher['token']}"
         if index_pos == 0:
-            voucher["qr_data_uri"] = generate_qr_data_uri(voucher["qr_url"])
+            voucher["qr_data_uri"] = generate_qr_data_uri(voucher["access_url"])
             latest_voucher = voucher
         else:
             history_vouchers.append(voucher)
 
-    admin_panel_url = f"{Settings.BASE_URL}/?token={Settings.ADMIN_TOKEN}"
+    admin_panel_url = f"{base_url}/?token={Settings.ADMIN_TOKEN}"
 
     return render_template(
         "index.html",
@@ -219,11 +244,14 @@ def qrcode_api(token: str):
     if row is None:
         abort(404, "Voucher não encontrado")
 
+    base_url = get_base_url()
+    access_url = f"{base_url}/v/{row['token']}"
+
     return jsonify(
         {
             "token": row["token"],
-            "qr_url": row["qr_url"],
-            "qrcode_data_uri": generate_qr_data_uri(row["qr_url"]),
+            "qr_url": access_url,
+            "qrcode_data_uri": generate_qr_data_uri(access_url),
         }
     )
 
@@ -254,7 +282,7 @@ def voucher_login(token: str):
 
     return render_template(
         "voucher_login.html",
-        hotspot_login_url=Settings.HOTSPOT_LOGIN_URL,
+        hotspot_login_url=ensure_http_scheme(Settings.HOTSPOT_LOGIN_URL),
         dst=Settings.HOTSPOT_DST,
         username=row["username"],
         password=row["password"],
